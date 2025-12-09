@@ -1,9 +1,15 @@
 {
   "compilerOptions": {
-    "jsx": "react-jsx", // for React 18+
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
+    "jsx": "react-jsx",
     "esModuleInterop": true,
-    "moduleResolution": "node",
-    "target": "es6"
-  }
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"],
+  "references": []
 }
