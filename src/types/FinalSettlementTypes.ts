@@ -8,6 +8,9 @@ export interface FormData {
   settlementDate: string;
   terminationType: string;
   serviceYears: string;
+  benefitYears: string;
+  serviceMonths: string;
+  serviceDays: string;
   totalDays: string;
   absentDays: string;
   basicWage: string;
@@ -22,6 +25,8 @@ export interface FormData {
   noticePay: string;
   others: string;
   advanceDeduction: string;
+  noticeDeduction: string;
+  otherDeduction: string;
   totalDeductions: string;
   companyName: string;
   companyAddress: string;
