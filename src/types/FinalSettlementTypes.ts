@@ -1,4 +1,3 @@
-// Type for FinalSettlementForm data
 export interface FormData {
   employeeName: string;
   cardNo: string;
@@ -18,7 +17,12 @@ export interface FormData {
   foodAllowance: string;
   medicalAllowance: string;
   transportAllowance: string;
-  totalDailyWage: string;
+  totalMonthlyWage: string;
+  dailyBasic: string;
+  dailyGross: string;
+  elQty: string;
+  noticePayDay: string;
+  noticeDeductionDay: string;
   earnedLeave: string;
   serviceCompensation: string;
   deathCompensation: string;

@@ -1,8 +1,9 @@
-import { useState, FormEvent, useEffect} from "react";
-import { FaCalendarAlt } from "react-icons/fa";
+import React, { useState, FormEvent, useEffect } from "react";
 import { FormData } from "../types/FinalSettlementTypes";
+import PaymentBill from "./PaymentBill";
 
 export default function FinalSettlementForm() {
+  const [showBill, setShowBill] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     employeeName: "সাইফুল ইসলাম",
     cardNo: "",
@@ -22,7 +23,12 @@ export default function FinalSettlementForm() {
     foodAllowance: "1250",
     medicalAllowance: "750",
     transportAllowance: "450",
-    totalDailyWage: "0",
+    totalMonthlyWage: "0",
+    dailyBasic: "0",
+    dailyGross: "0",
+    elQty: "0",
+    noticePayDay: "0",
+    noticeDeductionDay: "0",
     earnedLeave: "0",
     serviceCompensation: "0",
     deathCompensation: "0",
@@ -101,9 +107,9 @@ export default function FinalSettlementForm() {
     }));
   }, [formData.serviceYears, formData.totalDays]);
 
-  // Calculate wages when totalDailyWage changes
+  // Calculate wages when totalMonthlyWage changes
   useEffect(() => {
-    const totalWage = parseFloat(formData.totalDailyWage) || 0;
+    const totalWage = parseFloat(formData.totalMonthlyWage) || 0;
     const food = parseFloat(formData.foodAllowance) || 0;
     const medical = parseFloat(formData.medicalAllowance) || 0;
     const transport = parseFloat(formData.transportAllowance) || 0;
@@ -111,38 +117,42 @@ export default function FinalSettlementForm() {
     if (totalWage > 0) {
       const basic = (totalWage - (food + medical + transport)) / 1.5;
       const house = basic / 2;
+      const dailyBasic = basic / 30;
+      const dailyGross = totalWage / 30;
 
       setFormData(prev => ({
         ...prev,
         basicWage: basic.toFixed(2),
-        houseRent: house.toFixed(2)
+        houseRent: house.toFixed(2),
+        dailyBasic: dailyBasic.toFixed(2),
+        dailyGross: dailyGross.toFixed(2)
       }));
     }
-  }, [formData.totalDailyWage, formData.foodAllowance, formData.medicalAllowance, formData.transportAllowance]);
+  }, [formData.totalMonthlyWage, formData.foodAllowance, formData.medicalAllowance, formData.transportAllowance]);
 
 
   // Calculate service compensation based on termination type and benefit years
-useEffect(() => {
-  if (formData.terminationType === "ইস্তফা (২৭)") {
-    const benefit = parseFloat(formData.benefitYears) || 0;
-    const totalWage = parseFloat(formData.totalDailyWage) || 0;
-    const dailyWage = totalWage / 30;
-    let compensation = 0;
+  useEffect(() => {
+    if (formData.terminationType === "ইস্তফা (২৭)") {
+      const benefit = parseFloat(formData.benefitYears) || 0;
+      const totalWage = parseFloat(formData.totalMonthlyWage) || 0;
+      const dailyWage = totalWage / 30;
+      let compensation = 0;
 
-    if (benefit === 3) {
-      compensation = benefit * 7 * dailyWage;
-    } else if (benefit > 3 && benefit < 10) {
-      compensation = benefit * 15 * dailyWage;
-    } else if (benefit >= 10) {
-      compensation = benefit * 30 * dailyWage;
+      if (benefit === 3) {
+        compensation = benefit * 7 * dailyWage;
+      } else if (benefit > 3 && benefit < 10) {
+        compensation = benefit * 15 * dailyWage;
+      } else if (benefit >= 10) {
+        compensation = benefit * 30 * dailyWage;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        serviceCompensation: compensation.toFixed(2)
+      }));
     }
-
-    setFormData(prev => ({
-      ...prev,
-      serviceCompensation: compensation.toFixed(2)
-    }));
-  }
-}, [formData.terminationType, formData.benefitYears, formData.totalDailyWage]);
+  }, [formData.terminationType, formData.benefitYears, formData.totalMonthlyWage]);
 
   // Calculate total deductions
   useEffect(() => {
@@ -157,6 +167,23 @@ useEffect(() => {
       totalDeductions: total.toFixed(2)
     }));
   }, [formData.advanceDeduction, formData.noticeDeduction, formData.otherDeduction]);
+
+  // Calculate earnedLeave, noticePay, noticeDeduction
+  useEffect(() => {
+    const dailyGross = parseFloat(formData.dailyGross) || 0;
+    const dailyBasic = parseFloat(formData.dailyBasic) || 0;
+    
+    const elQty = parseFloat(formData.elQty) || 0;
+    const noticePayDay = parseFloat(formData.noticePayDay) || 0;
+    const noticeDeductionDay = parseFloat(formData.noticeDeductionDay) || 0;
+
+    setFormData(prev => ({
+      ...prev,
+      earnedLeave: (elQty * dailyGross).toFixed(2),
+      noticePay: (noticePayDay * dailyBasic).toFixed(2),
+      noticeDeduction: (noticeDeductionDay * dailyBasic).toFixed(2)
+    }));
+  }, [formData.dailyGross, formData.dailyBasic, formData.elQty, formData.noticePayDay, formData.noticeDeductionDay]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -184,24 +211,6 @@ useEffect(() => {
     console.log("Form Data:", formData);
     alert("ফর্ম সফলভাবে জমা হয়েছে!");
   };
-
-  const renderWageRow = (label: string, name: keyof FormData, readOnly: boolean = false) => (
-    <tr className="border-b border-black" key={name}>
-      <td className="w-1/2 p-3 font-semibold bg-gray-50 border-r border-black">
-        {label}
-      </td>
-      <td className="w-1/3 p-3 border-r border-black">
-        <input
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          readOnly={readOnly}
-          className={`w-full px-2 py-1 text-right focus:outline-none ${readOnly ? 'bg-gray-100' : ''}`}
-        />
-      </td>
-      <td className="w-1/6 p-3 text-sm">টাকা</td>
-    </tr>
-  );
 
   const renderCalculationRow = (label: string, name: keyof FormData, color: string = "") => (
     <tr className={`border-b border-black ${color}`} key={name}>
@@ -421,33 +430,52 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Daily Wage Section */}
+            {/* Monthly & Daily Wage */}
             <div className="border-2 border-black mb-6">
-              <div className="bg-gray-200 p-3 border-b-2 border-black text-center font-bold">
+              <div className="bg-gray-200 p-2 border-b-2 border-black text-center font-bold">
                 সর্বশেষ ধার্যকৃত মাসিক মোট মজুরি বা বেতনের বিবরণ
               </div>
-
               <table className="w-full">
                 <tbody>
                   <tr className="border-b border-black bg-yellow-50">
-                    <td className="w-1/2 p-3 font-bold border-r border-black">
-                      মোট মজুরি বা বেতন
+                    <td className="border-r border-black p-2 font-bold w-1/2">মোট মজুরি বা বেতন</td>
+                    <td className="border-r border-black p-2 w-1/3">
+                      <input name="totalMonthlyWage" value={formData.totalMonthlyWage} onChange={handleChange} className="w-full text-right font-bold bg-yellow-50 focus:outline-none" />
                     </td>
-                    <td className="w-1/3 p-3 border-r border-black">
-                      <input
-                        name="totalDailyWage"
-                        value={formData.totalDailyWage}
-                        onChange={handleChange}
-                        className="w-full px-2 py-1 text-right font-bold bg-yellow-50 focus:outline-none"
-                      />
-                    </td>
-                    <td className="w-1/6 p-3 text-sm font-bold">টাকা</td>
+                    <td className="p-2 text-sm font-bold w-1/6">টাকা</td>
                   </tr>
-                  {renderWageRow("মূল মজুরি বা বেতন", "basicWage", true)}
-                  {renderWageRow("বাড়ি ভাড়া", "houseRent", true)}
-                  {renderWageRow("খাদ্য ভাতা", "foodAllowance")}
-                  {renderWageRow("চিকিৎসা ভাতা", "medicalAllowance")}
-                  {renderWageRow("যাতায়াত ভাতা", "transportAllowance")}
+                  {[
+                    { label: "মূল মজুরি বা বেতন", name: "basicWage" },
+                    { label: "বাড়ি ভাড়া", name: "houseRent" },
+                    { label: "খাদ্য ভাতা", name: "foodAllowance" },
+                    { label: "চিকিৎসা ভাতা", name: "medicalAllowance" },
+                    { label: "যাতায়াত ভাতা", name: "transportAllowance" },
+                  ].map((item) => (
+                    <tr key={item.name} className="border-b border-black">
+                      <td className="border-r border-black p-2 font-semibold bg-gray-50">{item.label}</td>
+                      <td className="border-r border-black p-2">
+                        <input name={item.name} value={formData[item.name as keyof FormData]} onChange={handleChange} className="w-full text-right focus:outline-none" />
+                      </td>
+                      <td className="p-2 text-sm">টাকা</td>
+                    </tr>
+                  ))}
+                  {[
+                    { label: "এক দিনের মূল মজুরি বা বেতন", name: "dailyBasic" },
+                    { label: "এক দিনের মোট মজুরি বা বেতন", name: "dailyGross" },
+                  ].map((item) => (
+                    <tr key={item.name} className="border-b border-black bg-yellow-50">
+                      <td className="border-r border-black p-2 font-semibold">{item.label}</td>
+                      <td className="border-r border-black p-2">
+                        <input
+                          name={item.name}
+                          value={formData[item.name as keyof FormData]}
+                          readOnly
+                          className="w-full text-right font-bold bg-yellow-50 focus:outline-none"
+                        />
+                      </td>
+                      <td className="p-2 text-sm">টাকা</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -460,10 +488,26 @@ useEffect(() => {
 
               <table className="w-full">
                 <tbody>
-                  {renderCalculationRow("প্রাপ্য অর্জিত ছুটি", "earnedLeave", "bg-blue-50")}
+                  <tr className="border-b border-black bg-blue-50">
+                    <td className="border-r border-black p-3 font-semibold">
+                      প্রাপ্য অর্জিত ছুটি ( <input name="elQty" value={formData.elQty} onChange={handleChange} className="w-12 px-1 border-b border-black bg-transparent text-center focus:outline-none" /> দিন)
+                    </td>
+                    <td className="border-r border-black p-3">
+                      <input name="earnedLeave" value={formData.earnedLeave} readOnly className="w-full text-right focus:outline-none bg-transparent" />
+                    </td>
+                    <td className="p-3 text-sm">টাকা</td>
+                  </tr>
                   {renderCalculationRow("চাকরি অবসানজনিত ক্ষতিপূরণ", "serviceCompensation", "bg-blue-50")}
                   {renderCalculationRow("মৃত্যুজনিত ক্ষতিপূরণ (মৃত্যুর ক্ষেত্রে)", "deathCompensation", "bg-blue-50")}
-                  {renderCalculationRow("নোটিশ পে (প্রযোজ্য ক্ষেত্রে)", "noticePay", "bg-blue-50")}
+                  <tr className="border-b border-black bg-blue-50">
+                    <td className="border-r border-black p-3 font-semibold">
+                      নোটিশ পে (প্রযোজ্য ক্ষেত্রে: <input name="noticePayDay" value={formData.noticePayDay} onChange={handleChange} className="w-12 px-1 border-b border-black bg-transparent text-center focus:outline-none" /> দিন)
+                    </td>
+                    <td className="border-r border-black p-3">
+                      <input name="noticePay" value={formData.noticePay} readOnly className="w-full text-right focus:outline-none bg-transparent" />
+                    </td>
+                    <td className="p-3 text-sm">টাকা</td>
+                  </tr>
                   {renderCalculationRow("অন্যান্য (প্রযোজ্য ক্ষেত্রে)", "others", "bg-blue-50")}
                   
                   <tr className="bg-green-100 border-b-2 border-black">
@@ -480,7 +524,15 @@ useEffect(() => {
                   
                   {/* Deductions */}
                   {renderCalculationRow("কর্তন (অগ্রিম গ্রহণ বাবদ)", "advanceDeduction", "bg-red-50")}
-                  {renderCalculationRow("কর্তন (নোটিশ বাবদ)", "noticeDeduction", "bg-red-50")}
+                  <tr className="border-b border-black bg-red-50">
+                    <td className="border-r border-black p-3 font-semibold">
+                      কর্তন (নোটিশ বাবদ: <input name="noticeDeductionDay" value={formData.noticeDeductionDay} onChange={handleChange} className="w-12 px-1 border-b border-black bg-transparent text-center focus:outline-none" /> দিন )
+                    </td>
+                    <td className="border-r border-black p-3">
+                      <input name="noticeDeduction" value={formData.noticeDeduction} readOnly className="w-full text-right focus:outline-none bg-transparent" />
+                    </td>
+                    <td className="p-3 text-sm">টাকা</td>
+                  </tr>
                   {renderCalculationRow("অন্যান্য (প্রযোজ্য ক্ষেত্রে)", "otherDeduction", "bg-red-50")}
 
                   {/* Total Deduction */}
@@ -554,7 +606,22 @@ useEffect(() => {
               >
                 প্রিন্ট করুন
               </button>
+              <button 
+                onClick={() => setShowBill(!showBill)}
+                className="no-print bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:bg-purple-700 transition-all"
+              >
+                {showBill ? "বিল লুকান" : "পেমেন্ট বিল দেখুন"}
+              </button>
             </div>
+
+            {showBill && (
+              <PaymentBill 
+                formData={formData} 
+                totalReceivable={calculateTotalReceivable()} 
+                totalDeductions={formData.totalDeductions} 
+                netPayable={calculateFinalTotal()} 
+              />
+            )}
           </div>
         </div>
       </div>
