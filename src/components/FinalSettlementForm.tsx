@@ -568,7 +568,7 @@ export default function FinalSettlementForm() {
             </div>
 
             {/* Declaration */}
-            <div className="border-2 border-black bg-yellow-50 p-4 mb-6">
+            <div className="hidden border-2 border-black bg-yellow-50 p-4 mb-6">
               <p className="text-sm leading-relaxed">
                 উপরোক্ত হিসাবের বিবরণ দেখে ও বুঝে আমি সজ্ঞানে ঠাণ্ডা মস্তিষ্কে উপরোল্লেখিত টাকা গ্রহণ করিলাম।
                 এক্ষেত্রে কোম্পানির নিকট আমার বা আমার মনোনীত নমিনীর আর কোন দাবি/পাওনা রইল না।
@@ -576,7 +576,7 @@ export default function FinalSettlementForm() {
             </div>
 
             {/* Signatures */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+            <div className="hidden grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
               {[
                 { title: "প্রস্তুতকারিঃ", subtitle: "শ্রমিক/কর্মীর স্বাক্ষর" },
                 { title: formData.employeeName || "কর্মচারীর নাম" },
@@ -594,18 +594,18 @@ export default function FinalSettlementForm() {
 
             {/* Submit Section */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 border-t-2 border-gray-300">
-              <button
+              {/* <button
                 onClick={handleSubmit}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 transition-all"
               >
                 ফর্ম জমা দিন
-              </button>
-              <button 
+              </button> */}
+              {/* <button 
                 onClick={() => window.print()}
                 className="no-print bg-green-600 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:bg-green-700 transition-all"
               >
                 প্রিন্ট করুন
-              </button>
+              </button> */}
               <button 
                 onClick={() => setShowBill(!showBill)}
                 className="no-print bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:bg-purple-700 transition-all"

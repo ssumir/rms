@@ -1,33 +1,79 @@
-// src/context/LanguageContext.tsx
-import React, { createContext, useContext, useState, useEffect } from "react";
 
-type Lang = "bn" | "en";
-
-interface LangContextProps {
-  lang: Lang;
-  setLang: (lang: Lang) => void;
-}
-
-const LangContext = createContext<LangContextProps>({
-  lang: "en",
-  setLang: () => {},
-});
-
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [lang, setLang] = useState<Lang>("en");
-
-  useEffect(() => {
-  const userLang = navigator.language; // "en-US", "bn-BD", etc.
-  if (userLang.startsWith("bn")) setLang("bn");
-  else setLang("en");
-}, []);
-
-
-  useEffect(() => {
-    document.body.className = lang === "bn" ? "lang-bn" : "lang-en";
-  }, [lang]);
-
-  return <LangContext.Provider value={{ lang, setLang }}>{children}</LangContext.Provider>;
-};
-
-export const useLanguage = () => useContext(LangContext);
+export const translations = {
+  bn: {
+    paymentBill: 'পেমেন্ট বিল',
+    companyName: 'কোম্পানির নাম',
+    address: 'ঠিকানা',
+    employeeName: 'কর্মীর নাম',
+    designation: 'পদবী',
+    section: 'বিভাগ',
+    terminationType: 'চাকরি নিষ্পত্তির ধরন',
+    date: 'বিল ইস্যুর তারিখ',
+    joiningDate: 'নিয়োগের তারিখ',
+    lastAttendance: 'সর্বশেষ উপস্থিতি',
+    serviceDuration: 'চাকরির মেয়াদকাল',
+    years: 'বছর',
+    months: 'মাস',
+    days: 'দিন',
+    benefitYears: 'সর্বমোট সুবিধা প্রাপ্ত বছর',
+    description: 'বিবরণ',
+    amount: 'টাকা',
+    earnings: 'প্রাপ্য',
+    earnedLeave: 'অর্জিত ছুটি',
+    serviceCompensation: 'চাকরি অবসানজনিত ক্ষতিপূরণ',
+    deathCompensation: 'মৃত্যুজনিত ক্ষতিপূরণ',
+    noticePay: 'নোটিশ পে',
+    others: 'অন্যান্য',
+    totalEarnings: 'মোট প্রাপ্য (A)',
+    deductions: 'কর্তন',
+    advanceDeduction: 'অগ্রিম গ্রহণ',
+    noticeDeduction: 'নোটিশ কর্তন',
+    otherDeduction: 'অন্যান্য কর্তন',
+    totalDeductions: 'মোট কর্তন (B)',
+    netPayable: 'সর্বমোট প্রাপ্য (A-B)',
+    preparedBy: 'প্রস্তুতকারি',
+    checkedBy: 'পরীক্ষা',
+    approvedBy: 'অনুমোদন',
+    receivedAmount: 'উপরোক্ত হিসাবের বিবরণ দেখে ও বুঝে আমি সজ্ঞানে ঠাণ্ডা মস্তিষ্কে উপরোল্লেখিত টাকা গ্রহণ করিলাম। এক্ষেত্রে কোম্পানির নিকট আমার বা আমার মনোনীত ব্যাক্তি বা উত্তরাধীকারের  আর কোন দাবি/পাওনা রইল না।',
+    receiverSignature: 'প্রাপকের স্বাক্ষর',
+    printBill: 'প্রিন্ট করুন',
+  },
+  en: {
+    paymentBill: 'PAYMENT BILL',
+    companyName: 'Company Name',
+    address: 'Address',
+    employeeName: 'Employee Name',
+    designation: 'Designation',
+    section: 'Section',
+    terminationType: 'Termination Type',
+    date: 'Bill Issue Date',
+    joiningDate: 'Joining Date',
+    lastAttendance: 'Last Attendance',
+    serviceDuration: 'Service Duration',
+    years: 'Years',
+    months: 'Months',
+    days: 'Days',
+    benefitYears: 'Total Benefit Years',
+    description: 'Description',
+    amount: 'Amount (BDT)',
+    earnings: 'EARNINGS',
+    earnedLeave: 'Earned Leave',
+    serviceCompensation: 'Service Compensation',
+    deathCompensation: 'Death Compensation',
+    noticePay: 'Notice Pay',
+    others: 'Others',
+    totalEarnings: 'Total Earnings (A)',
+    deductions: 'DEDUCTIONS',
+    advanceDeduction: 'Advance Deduction',
+    noticeDeduction: 'Notice Deduction',
+    otherDeduction: 'Other Deduction',
+    totalDeductions: 'Total Deductions (B)',
+    netPayable: 'Net Payable (A-B)',
+    preparedBy: 'Prepared By',
+    checkedBy: 'Checked By',
+    approvedBy: 'Approved By',
+    receivedAmount: 'After reviewing and understanding the above calculation, I consciously accept the stated amount. I or my nominee or my heirs have no further claims against the company.',
+    receiverSignature: "Receiver's Signature",
+    printBill: 'Print Bill',
+  },
+} as const;

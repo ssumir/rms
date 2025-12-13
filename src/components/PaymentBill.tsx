@@ -1,8 +1,7 @@
-// src/components/PaymentBill.tsx
-import React from "react";
+import React, { useState } from "react";
 import { FormData } from "../types/FinalSettlementTypes";
-import { toBanglaNumber, formatDate } from "../utils/utils";
-import { useLanguage } from "../context/LanguageContext";
+import { toBanglaNumber, formatDate } from "../utils/bnEnDate";
+import { translations } from "../context/LanguageContext";
 
 interface PaymentBillProps {
   formData: FormData;
@@ -11,112 +10,282 @@ interface PaymentBillProps {
   netPayable: string;
 }
 
-export default function PaymentBill({ formData, totalReceivable, totalDeductions, netPayable }: PaymentBillProps) {
-  const { lang } = useLanguage();
+type Language = 'bn' | 'en';
 
-  const displayNumber = (num: string | number) =>
-    lang === "bn" ? toBanglaNumber(num) : num;
+const PaymentBill: React.FC<PaymentBillProps> = ({ 
+  formData, 
+  totalReceivable, 
+  totalDeductions, 
+  netPayable 
+}) => {
+  const [lang, setLang] = useState<Language>('bn');
 
-  const displayDate = (date: string) =>
-    lang === "bn" ? toBanglaNumber(formatDate(date)) : formatDate(date);
+  const displayNumber = (num: string | number): string | number => 
+    lang === 'bn' ? toBanglaNumber(num) : num;
+
+  const displayDate = (date: string): string => 
+    lang === 'bn' ? toBanglaNumber(formatDate(date)) : formatDate(date);
+
+  const t = (key: keyof typeof translations.bn): string => translations[lang][key];
+
+  const handlePrint = (): void => {
+    window.print();
+  };
+
+  const earningsRows = [
+    { 
+      label: `${t('earnedLeave')} (${displayNumber(formData.elQty || 0)} ${t('days')})`, 
+      value: formData.earnedLeave 
+    },
+    { label: t('serviceCompensation'), value: formData.serviceCompensation },
+    { label: t('deathCompensation'), value: formData.deathCompensation },
+    { label: t('noticePay'), value: formData.noticePay },
+    { label: t('others'), value: formData.others },
+  ];
+
+  const deductionRows = [
+    { label: t('advanceDeduction'), value: formData.advanceDeduction },
+    { label: t('noticeDeduction'), value: formData.noticeDeduction },
+    { label: t('otherDeduction'), value: formData.otherDeduction },
+  ];
 
   return (
-    <div className="mt-8 p-8 bg-white border-2 border-black print:break-before-page">
-      <div className="text-center border-b-2 border-black pb-4 mb-6">
-        <h2 className="text-2xl font-bold">{formData.companyName || (lang==="bn" ? "কোম্পানির নাম" : "Company Name")}</h2>
-        <p>{formData.companyAddress || (lang==="bn" ? "ঠিকানা" : "Address")}</p>
-        <h1 className="text-xl font-bold mt-2 uppercase border-2 border-black inline-block px-4 py-1">{lang==="bn" ? "পেমেন্ট বিল" : "Payment Bill"}</h1>
+    <>
+      <style>{`
+        @media print {
+          @page {
+            size: A4;
+            margin: 0;
+          }
+          
+          html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+          }
+          
+          body * {
+            visibility: hidden;
+          }
+          
+          #payment-bill-container,
+          #payment-bill-container * {
+            visibility: visible;
+          }
+          
+          #payment-bill-container {
+            position: fixed !important;
+            left: 0;
+            top: 0;
+            width: 210mm;
+            max-height: 297mm;
+            height: 297mm;
+            margin: 0;
+            padding: 10mm 15mm;
+            background: white;
+            box-sizing: border-box;
+            font-size: 10pt;
+            overflow: hidden;
+            page-break-after: avoid;
+            page-break-before: avoid;
+            page-break-inside: avoid;
+          }
+          
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Language Toggle & Print Controls */}
+      <div className="no-print mt-2 mb-2 flex justify-between items-center bg-purple-50 p-2 rounded-lg border-2 border-purple-300">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setLang('bn')}
+            className={`px-4 py-2 rounded font-semibold transition-all ${
+              lang === 'bn' 
+                ? 'bg-purple-600 text-white shadow-lg' 
+                : 'bg-white text-purple-600 border-2 border-purple-600 hover:bg-purple-50'
+            }`}
+            aria-label="Switch to Bangla"
+          >
+            বাংলা (BN)
+          </button>
+          <button
+            onClick={() => setLang('en')}
+            className={`px-4 py-2 rounded font-semibold transition-all ${
+              lang === 'en' 
+                ? 'bg-purple-600 text-white shadow-lg' 
+                : 'bg-white text-purple-600 border-2 border-purple-600 hover:bg-purple-50'
+            }`}
+            aria-label="Switch to English"
+          >
+            English (EN)
+          </button>
+        </div>
+        <button
+          onClick={handlePrint}
+          className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold shadow-lg hover:bg-green-700 transition-all"
+          aria-label="Print payment bill"
+        >
+          🖨️ {t('printBill')}
+        </button>
       </div>
 
-      <div className="flex justify-between mb-6">
-        <div>
-          <p><strong>{lang==="bn" ? "কর্মীর নাম" : "Employee Name"}:</strong> {formData.employeeName}</p>
-          <p><strong>ID / Card No:</strong> {formData.cardNo}</p>
-          <p><strong>{lang==="bn" ? "পদবী" : "Designation"}:</strong> {formData.designation}</p>
-          <p><strong>{lang==="bn" ? "বিভাগ" : "Section"}:</strong> {formData.section}</p>
-          <p><strong>{lang==="bn" ? "চাকরি নিষ্পত্তির ধরন" : "Termination Type"}:</strong> {formData.terminationType}</p>
-        </div>
-        <div className="text-right">
-          <p><strong>{lang==="bn" ? "তারিখ" : "Issue Date"}:</strong> {displayDate(formData.settlementDate)}</p>
-          <p><strong>{lang==="bn" ? "নিয়োগের তারিখ" : "Date of Joining"}:</strong> {displayDate(formData.joiningDate)}</p>
-          <p><strong>{lang==="bn" ? "সর্বশেষ উপস্থিতি" : "Last Present Date"}:</strong> {displayDate(formData.lastAttendance)}</p>
-          <p><strong>{lang==="bn" ? "চাকরির মেয়াদকাল" : "Duration of Service"}:</strong> {`${displayNumber(formData.serviceYears || 0)} ${lang==="bn" ? "বছর" : "Years"} ${displayNumber(formData.serviceMonths || 0)} ${lang==="bn" ? "মাস" : "Months"} ${displayNumber(formData.serviceDays || 0)} ${lang==="bn" ? "দিন" : "Days"}`}</p>
-          <p><strong>{lang==="bn" ? "সর্বমোট সুবিধা প্রাপ্ত বছর" : "Total Benefit Years"}:</strong> {displayNumber(formData.benefitYears)}</p>
-        </div>
-      </div>
+      {/* Payment Bill Content */}
+      <div id="payment-bill-container" className="p-6 bg-white border-2 border-black">
+        {/* Header */}
+        <header className="text-center border-b-2 border-black pb-2 mb-4">
+          <h2 className="text-xl font-bold">
+            {formData.companyName || t('companyName')}
+          </h2>
+          <p className="text-sm">{formData.companyAddress || t('address')}</p>
+          <h1 className="text-lg font-bold mt-1 uppercase border-2 border-black inline-block px-3 py-1">
+            {t('paymentBill')}
+          </h1>
+        </header>
 
-      <table className="w-full border-collapse border border-black mb-6">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border border-black p-2 text-left">{lang==="bn" ? "বিবরণ" : "Description"}</th>
-            <th className="border border-black p-2 text-right">{lang==="bn" ? "টাকা" : "Amount (BDT)"}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="border border-black p-2 font-bold bg-gray-100" colSpan={2}>{lang==="bn" ? "প্রাপ্য" : "Earnings"}</td>
-          </tr>
-          {[
-            { label: `${lang==="bn" ? "অর্জিত ছুটি" : "Earned Leave"} (${displayNumber(formData.elQty || 0)} ${lang==="bn" ? "দিন" : "Days"})`, value: formData.earnedLeave },
-            { label: lang==="bn" ? "চাকরি অবসানজনিত ক্ষতিপূরণ" : "Service Compensation", value: formData.serviceCompensation },
-            { label: lang==="bn" ? "মৃত্যুজনিত ক্ষতিপূরণ" : "Death Compensation", value: formData.deathCompensation },
-            { label: lang==="bn" ? "নোটিশ পে" : "Notice Pay", value: formData.noticePay },
-            { label: lang==="bn" ? "অন্যান্য" : "Others", value: formData.others },
-          ].map((item, index) => (
-            parseFloat(item.value) > 0 && (
-              <tr key={index}>
-                <td className="border border-black p-2">{item.label}</td>
-                <td className="border border-black p-2 text-right">{displayNumber(item.value)}</td>
-              </tr>
-            )
-          ))}
-          <tr className="font-bold">
-            <td className="border border-black p-2 text-right">{lang==="bn" ? "মোট প্রাপ্য (A)" : "Total Earnings (A)"}</td>
-            <td className="border border-black p-2 text-right">{displayNumber(totalReceivable)}</td>
-          </tr>
-
-          {/* Deductions */}
-          <tr>
-            <td className="border border-black p-2 font-bold bg-gray-100" colSpan={2}>{lang==="bn" ? "কর্তন" : "Deductions"}</td>
-          </tr>
-          {[
-            { label: lang==="bn" ? "অগ্রিম গ্রহণ" : "Advance Deduction", value: formData.advanceDeduction },
-            { label: lang==="bn" ? "নোটিশ কর্তন" : "Notice Deduction", value: formData.noticeDeduction },
-            { label: lang==="bn" ? "অন্যান্য কর্তন" : "Other Deduction", value: formData.otherDeduction },
-          ].map((item, index) => (
-            parseFloat(item.value) > 0 && (
-              <tr key={index}>
-                <td className="border border-black p-2">{item.label}</td>
-                <td className="border border-black p-2 text-right">{displayNumber(item.value)}</td>
-              </tr>
-            )
-          ))}
-          <tr className="font-bold">
-            <td className="border border-black p-2 text-right">{lang==="bn" ? "মোট কর্তন (B)" : "Total Deductions (B)"}</td>
-            <td className="border border-black p-2 text-right">{displayNumber(totalDeductions)}</td>
-          </tr>
-
-          <tr className="bg-gray-200 font-bold text-lg">
-            <td className="border border-black p-2 text-right">{lang==="bn" ? "সর্বমোট প্রাপ্য (A-B)" : "Net Payable (A-B)"}</td>
-            <td className="border border-black p-2 text-right">{displayNumber(netPayable)}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div className="mt-12 grid grid-cols-3 gap-4 text-center">
-        {["Prepared By","Checked By","Approved By"].map((title, idx) => (
-          <div key={idx} className="border-t border-black pt-2">
-            <p>{lang==="bn" ? ["প্রস্তুতকারি","পরীক্ষা","অনুমোদন"][idx] : title}</p>
+        {/* Employee Information */}
+        <section className="flex justify-between mb-4 text-sm">
+          <div>
+            <p><strong>{t('employeeName')}:</strong> {formData.employeeName}</p>
+            <p><strong>ID / Card No:</strong> {formData.cardNo}</p>
+            <p><strong>{t('designation')}:</strong> {formData.designation}</p>
+            <p><strong>{t('section')}:</strong> {formData.section}</p>
+            <p><strong>{t('terminationType')}:</strong> {formData.terminationType}</p>
           </div>
-        ))}
+          <div className="text-right">
+            <p><strong>{t('date')}:</strong> {displayDate(formData.settlementDate)}</p>
+            <p><strong>{t('joiningDate')}:</strong> {displayDate(formData.joiningDate)}</p>
+            <p><strong>{t('lastAttendance')}:</strong> {displayDate(formData.lastAttendance)}</p>
+            <p>
+              <strong>{t('serviceDuration')}:</strong>{' '}
+              {displayNumber(formData.serviceYears || 0)} {t('years')}{' '}
+              {displayNumber(formData.serviceMonths || 0)} {t('months')}{' '}
+              {displayNumber(formData.serviceDays || 0)} {t('days')}
+            </p>
+            <p>
+              <strong>{t('benefitYears')}:</strong>{" "}
+              {displayNumber(
+                Number(formData.benefitYears) >= 3 ? formData.benefitYears : 0
+              )}
+            </p>
+          </div>
+        </section>
+
+         {/* Employee Information */}
+        <section className="flex justify-between mb-4 text-sm">
+          <div>
+            <p><strong>{t('employeeName')}:</strong> {formData.totalMonthlyWage}</p>
+            <p><strong>ID / Card No:</strong> {formData.cardNo}</p>
+            <p><strong>{t('designation')}:</strong> {formData.designation}</p>
+            <p><strong>{t('section')}:</strong> {formData.section}</p>
+          </div>
+          <div className="text-right">
+            <p><strong>{t('date')}:</strong> {displayDate(formData.settlementDate)}</p>
+            <p><strong>{t('joiningDate')}:</strong> {displayDate(formData.joiningDate)}</p>
+            <p><strong>{t('lastAttendance')}:</strong> {displayDate(formData.lastAttendance)}</p>
+            <p>
+              <strong>{t('benefitYears')}:</strong>{" "}
+              {displayNumber(
+                Number(formData.benefitYears) >= 3 ? formData.benefitYears : 0
+              )}
+            </p>
+          </div>
+        </section>
+
+        {/* Payment Details Table */}
+        <table className="w-full border-collapse border border-black mb-4 text-sm">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="border border-black p-1.5 text-left">{t('description')}</th>
+              <th className="border border-black p-1.5 text-right">{t('amount')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Earnings Section */}
+            <tr>
+              <td className="border border-black p-1.5 font-bold bg-gray-100" colSpan={2}>
+                {t('earnings')}
+              </td>
+            </tr>
+            {earningsRows.map((item, index) => (
+              parseFloat(item.value) > 0 && (
+                <tr key={`earning-${index}`}>
+                  <td className="border border-black p-1.5">{item.label}</td>
+                  <td className="border border-black p-1.5 text-right">
+                    {displayNumber(item.value)}
+                  </td>
+                </tr>
+              )
+            ))}
+            <tr className="font-bold">
+              <td className="border border-black p-1.5 text-right">
+                {t('totalEarnings')}
+              </td>
+              <td className="border border-black p-1.5 text-right">
+                {displayNumber(totalReceivable)}
+              </td>
+            </tr>
+
+            {/* Deductions Section */}
+            <tr>
+              <td className="border border-black p-1.5 font-bold bg-gray-100" colSpan={2}>
+                {t('deductions')}
+              </td>
+            </tr>
+            {deductionRows.map((item, index) => (
+              parseFloat(item.value) > 0 && (
+                <tr key={`deduction-${index}`}>
+                  <td className="border border-black p-1.5">{item.label}</td>
+                  <td className="border border-black p-1.5 text-right">
+                    {displayNumber(item.value)}
+                  </td>
+                </tr>
+              )
+            ))}
+            <tr className="font-bold">
+              <td className="border border-black p-1.5 text-right">
+                {t('totalDeductions')}
+              </td>
+              <td className="border border-black p-1.5 text-right">
+                {displayNumber(totalDeductions)}
+              </td>
+            </tr>
+
+            {/* Net Payable */}
+            <tr className="bg-gray-200 font-bold text-base">
+              <td className="border border-black p-1.5 text-right">
+                {t('netPayable')}
+              </td>
+              <td className="border border-black p-1.5 text-right">
+                {displayNumber(netPayable)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+
+        {/* Signature Section */}
+        <section className="mt-10 grid grid-cols-3 gap-4 text-center text-sm">
+          {[t('preparedBy'), t('checkedBy'), t('approvedBy')].map((title, idx) => (
+            <div key={`signature-${idx}`} className="border-t border-black pt-1">
+              <p>{title}</p>
+            </div>
+          ))}
+        </section>
+        
+        {/* Receiver Acknowledgment */}
+        <footer className="mt-4 border-t border-black pt-1.5 text-center text-sm">
+          <p className="text-left">{t('receivedAmount')}</p>
+          <div className="mt-10 w-60 mx-auto border-t border-black pt-1">
+            <p><strong>{t('receiverSignature')}:</strong> ({formData.employeeName})</p>
+          </div>
+        </footer>
       </div>
-      
-      <div className="mt-8 border-t border-black pt-2 text-center">
-        <p>{lang==="bn" ? "সম্পূর্ণ টাকা নগদ/চেক প্রাপ্ত" : "Received the full amount in cash/cheque."}</p>
-        <div className="mt-8 w-40 mx-auto border-t border-black pt-2">
-          <p>{lang==="bn" ? "প্রাপক স্বাক্ষর" : "Receiver's Signature"}</p>
-        </div>
-      </div>
-    </div>
+    </>
   );
-}
+};
+
+export default PaymentBill;
